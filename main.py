@@ -4,7 +4,7 @@ from Environment import Environment
 if __name__ == '__main__':
 
     episode_count = 1
-    max_steps = 35
+    max_steps = 3500
     reward = 0
     done = False
 
@@ -15,6 +15,7 @@ if __name__ == '__main__':
     for i in xrange(episode_count):
         observation = env.reset()
         for j in xrange(max_steps):
+            env.render()
             action = agent.act(observation, reward, done)
             observation, done = env.step(action)
 

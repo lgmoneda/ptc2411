@@ -4,4 +4,4 @@ class Agent(object):
 		pass
 
 	def act(self, observation, reward, done):
-		return (1, 0)
+		return (1, 1)

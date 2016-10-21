@@ -1,4 +1,6 @@
 #encoding=utf-8
+from graphical_setup import *
+
 class Environment(object):
 	"""
 	"""
@@ -13,10 +15,15 @@ class Environment(object):
 					     	 (5, 50, 10),
 							 (15, 100, 15),
 							 (30, 150, 5),
-							 (34, 200, 30)]
-		self.desired_path = self.createFullDesiredPath()
+							 (34, 200, 30),
+							 (50, 300, 160),
+							 (60, 350, 400),
+							 (100, 600, 410),
+							 (200, 800, 500)]
+		self.actual_path = []
+		self.desired_path = self.createFullDesiredPath(self.tmax)
 
-	def createFullDesiredPath(self, n=35):
+	def createFullDesiredPath(self, n):
 		""" Creates a full list of desired points for the path
 
 		Assumes we have a rect between two points from the desired path
@@ -29,7 +36,7 @@ class Environment(object):
 		"""
 
 		fullDP = []
-		for t in range(n):
+		for t in range(n+1):
 			for i in range(len(self.desired_path)):
 				if t == self.desired_path[i][0]:
 					fullDP.append(self.desired_path[i])
@@ -72,7 +79,7 @@ class Environment(object):
 			format(self.x, self.y, self.t, self.Vx, self.Vy))
 
 	def squaredError(self, state):
-		""" Calculates the total squared error from a single state
+		""" Calculates the squared error from a single state
 		"""
 		desired_point = self.desiredPoint()
 		errors = ((state["x"] - desired_point[1]) ** 2, (state["y"] - desired_point[2]) ** 2)
@@ -97,7 +104,10 @@ class Environment(object):
 		Returns:
 			A tuple with (t, x, y)
 		"""
-		return self.desired_path[self.t]
+		if self.t < len(self.desired_path):
+			return self.desired_path[self.t]
+		else:
+			return self.desired_path[-1]
 
 	def step(self, action):
 		""" Receives an action and return the next environment state
@@ -109,7 +119,9 @@ class Environment(object):
 			done: boolean for simulation end
 
 		"""
-		
+		### Saving the point the agent has passed
+		self.actual_path.append((self.t, self.x, self.y))
+
 		### Para deixar claro o formato da observation
 		observation = {"x": None,
 					   "y": None,
@@ -138,9 +150,39 @@ class Environment(object):
 		done = False
 		if self.tmax <= self.t + 1:
 			done = True
-		print("Desired point {0}".format(self.desiredPoint()))
+		try:
+			print("Desired point {0}".format(self.desiredPoint()))
+		except:
+			print("No desired point!")
 		self.printState()
 		print("Error: {0:.2f}".format(self.squaredError(observation)))
 		#print("Reward {0:.2f}".format(self.rewardFunction(observation)))
 		return observation, done
+
+
+	def render(self):
+		""" Renders the environment
+		"""
+
+		### Making the window blue  
+		window.fill(BLUE)
+		### Drawing desired path
+		for i in range(len(self.desired_path) - 1):
+			pygame.draw.line(window, 
+							 (255, 0, 0), 
+							 self.desired_path[i][1:], 
+							 self.desired_path[i+1][1:])
+
+		### Drawing actual path
+		for i in range(len(self.actual_path) - 1):
+			pygame.draw.line(window, 
+							 (100, 255, 100), 
+							 self.actual_path[i][1:], 
+							 self.actual_path[i+1][1:])
+
+		### Displaying our submarine at (x, y)
+		window.blit(submarine, (self.x - submarine.get_width()/2, self.y - submarine.get_height()/2))	
+
+		### Game loop
+		final_loop()
 
