@@ -5,6 +5,8 @@ class Environment(object):
 	"""
 	"""
 
+	ENVIRONMENT_SIZE = (800, 600)
+
 	def __init__(self, tmax):
 		self.tmax = tmax 
 		self.reset()
@@ -66,6 +68,7 @@ class Environment(object):
 		self.Vx = 0; self.Vy = 0
 		self.t = 0
 		self.m = 10
+		self.actual_path = []
 
 	def printState(self):
 		""" Prints the current state

@@ -3,8 +3,8 @@ from Environment import Environment
 
 if __name__ == '__main__':
 
-    episode_count = 1
-    max_steps = 3500
+    episode_count = 2
+    max_steps = 200
     reward = 0
     done = False
 
