@@ -1,11 +1,23 @@
 #encoding=utf-8
 from graphical_setup import *
+import intertools	
 
 class Environment(object):
 	"""
 	"""
 
+	### Environment Params
 	ENVIRONMENT_SIZE = (800, 600)
+	Vx_max = 5
+	Vx_min = -5
+	Vy_max = 5
+	Vy_min = -5
+
+	Fx_max = 1 
+	Fx_min = -1
+	Fy_max = 1 
+	Fy_min = -1
+
 
 	def __init__(self, tmax):
 		self.tmax = tmax 
@@ -13,15 +25,31 @@ class Environment(object):
 		print("Estado inicial: ")
 		self.printState()
 		self.gravity = 10
+
+		self.Vx_range = range(Vx_min, Vx_max + 1)
+		self.Vy_range = range(Vy_min, Vy_max + 1)
+
+		self.action_space = [range(Fx_min, Fx_max + 1),
+							 range(Fy_min, Fy_max + 1)]
+							 
+		self.action_space = list(itertools.product(*self.action_space))
+
+		### Points (t, x, y)
 		self.desired_path = [(0, 0, 0),
-					     	 (5, 50, 10),
-							 (15, 100, 15),
-							 (30, 150, 5),
-							 (34, 200, 30),
-							 (50, 300, 160),
-							 (60, 350, 400),
+					     	 (5, 50, 50),
+							 (15, 100, 105),
+							 (30, 150, 205),
+							 (34, 200, 300),
+							 (50, 300, 360),
+							 (60, 350, 380),
 							 (100, 600, 410),
-							 (200, 800, 500)]
+							 (105, 560, 420),
+							 (120, 500, 460),
+							 (150, 430, 400),
+							 (170, 580, 300),
+							 (190, 610, 380),
+							 (200, 800, 200)]
+
 		self.actual_path = []
 		self.desired_path = self.createFullDesiredPath(self.tmax)
 
@@ -92,7 +120,7 @@ class Environment(object):
 		""" Calculates the reward from a single state
 
 		Params:
-			state: a (t, x, y) tuple
+			state: a dict with state params
 		"""
 		error = self.squaredError(state)
 		return float(10000) / error
@@ -112,6 +140,7 @@ class Environment(object):
 		else:
 			return self.desired_path[-1]
 
+
 	def step(self, action):
 		""" Receives an action and return the next environment state
 
@@ -125,10 +154,12 @@ class Environment(object):
 		### Saving the point the agent has passed
 		self.actual_path.append((self.t, self.x, self.y))
 
-		### Para deixar claro o formato da observation
-		observation = {"x": None,
+		### Observation structure
+		observation = {"t": None,
+					   "x": None,
 					   "y": None,
-					   "t": None}
+					   "vx": None,
+					   "vy": None}
 		
 	    ### Incremento o tempo em uma unidade
 		self.t += 1
@@ -143,13 +174,21 @@ class Environment(object):
 		self.Vx += self.Ax
 		self.Vy += self.Ay
 
+		if self.Vx not in self.Vx_range:
+			self.Vx -= self.Ax
+		if self.Vy not in self.Vy_range:
+			self.Vy -= self.Ay
+
 		self.x += self.Vx
 		self.y += self.Vy
 
-		### Monta dicionario para retorno
+		### Passing values to the observation dict
 		observation["x"] = self.x
 		observation["y"] = self.y
 		observation["t"] = self.t
+		observation["vx"] = self.Vx
+		observation["vy"] = self.Vy
+
 		done = False
 		if self.tmax <= self.t + 1:
 			done = True
@@ -160,7 +199,9 @@ class Environment(object):
 		self.printState()
 		print("Error: {0:.2f}".format(self.squaredError(observation)))
 		#print("Reward {0:.2f}".format(self.rewardFunction(observation)))
-		return observation, done
+
+		reward = self.rewardFunction(observation)
+		return observation, reward, done
 
 
 	def render(self):
