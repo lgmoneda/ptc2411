@@ -1,17 +1,17 @@
 #encoding=utf-8
 from graphical_setup import *
-import intertools	
+import itertools	
 
 class Environment(object):
 	"""
 	"""
 
 	### Environment Params
-	ENVIRONMENT_SIZE = (800, 600)
-	Vx_max = 5
-	Vx_min = -5
-	Vy_max = 5
-	Vy_min = -5
+	SIZE = (800, 600)
+	Vx_max = 1
+	Vx_min = -1
+	Vy_max = 1
+	Vy_min = -1
 
 	Fx_max = 1 
 	Fx_min = -1
@@ -26,17 +26,24 @@ class Environment(object):
 		self.printState()
 		self.gravity = 10
 
-		self.Vx_range = range(Vx_min, Vx_max + 1)
-		self.Vy_range = range(Vy_min, Vy_max + 1)
+		self.Vx_range = range(Environment.Vx_min, Environment.Vx_max + 1)
+		self.Vy_range = range(Environment.Vy_min, Environment.Vy_max + 1)
+		#print(self.Vx_range)
 
-		self.action_space = [range(Fx_min, Fx_max + 1),
-							 range(Fy_min, Fy_max + 1)]
-							 
-		self.action_space = list(itertools.product(*self.action_space))
+		self.action_space = [range(Environment.Fx_min, Environment.Fx_max + 1),
+							 range(Environment.Fy_min, Environment.Fy_max + 1)]
+
+		#self.action_space = list(itertools.product(*self.action_space))
+
+		### hehe
+		space_space = [range(0, Environment.SIZE[0] + 1), range(0, Environment.SIZE[1] + 1)] 
+		#self.state_space = space_space + [self.Vx_range, self.Vy_range]
+		#self.state_space = list(itertools.product(*self.state_space))
+		self.state_space = list(itertools.product(*space_space))
 
 		### Points (t, x, y)
 		self.desired_path = [(0, 0, 0),
-					     	 (5, 50, 50),
+					     	 (5, 70, 30),
 							 (15, 100, 105),
 							 (30, 150, 205),
 							 (34, 200, 300),
@@ -49,6 +56,8 @@ class Environment(object):
 							 (170, 580, 300),
 							 (190, 610, 380),
 							 (200, 800, 200)]
+
+		self.final_state = self.desired_path[-1]
 
 		self.actual_path = []
 		self.desired_path = self.createFullDesiredPath(self.tmax)
@@ -83,6 +92,9 @@ class Environment(object):
 						desired_x = point1[1] + (float(delta_x) / delta_t) * abs(t - point1[0])
 						desired_y = point1[2] + (float(delta_y) / delta_t) * abs(t - point1[0])
 
+						desired_x = int(desired_x)
+						desired_y = int(desired_y)
+
 						fullDP.append((t, desired_x, desired_y))
 						break
 
@@ -95,7 +107,7 @@ class Environment(object):
 		self.x = 0; self.y = 0
 		self.Vx = 0; self.Vy = 0
 		self.t = 0
-		self.m = 10
+		self.m = 1
 		self.actual_path = []
 
 	def printState(self):
@@ -174,9 +186,9 @@ class Environment(object):
 		self.Vx += self.Ax
 		self.Vy += self.Ay
 
-		if self.Vx not in self.Vx_range:
+		if int(self.Vx) not in self.Vx_range:
 			self.Vx -= self.Ax
-		if self.Vy not in self.Vy_range:
+		if int(self.Vy) not in self.Vy_range:
 			self.Vy -= self.Ay
 
 		self.x += self.Vx
