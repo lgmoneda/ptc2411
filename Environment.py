@@ -1,6 +1,7 @@
 #encoding=utf-8
 from graphical_setup import *
 import itertools	
+import numpy as np
 
 class Environment(object):
 	"""
@@ -36,10 +37,12 @@ class Environment(object):
 		#self.action_space = list(itertools.product(*self.action_space))
 
 		### hehe
-		space_space = [range(0, Environment.SIZE[0] + 1), range(0, Environment.SIZE[1] + 1)] 
+		#self.space_space = [range(0, Environment.SIZE[0] + 1), range(0, Environment.SIZE[1] + 1)] 
 		#self.state_space = space_space + [self.Vx_range, self.Vy_range]
 		#self.state_space = list(itertools.product(*self.state_space))
-		self.state_space = list(itertools.product(*space_space))
+		#self.state_space = itertools.product(*space_space)
+		self.lx = [x for x in range(Environment.SIZE[0])]
+		self.ly = [y for y in range(Environment.SIZE[1])]
 
 		### Points (t, x, y)
 		self.desired_path = [(0, 0, 0),
@@ -61,6 +64,7 @@ class Environment(object):
 
 		self.actual_path = []
 		self.desired_path = self.createFullDesiredPath(self.tmax)
+
 
 	def createFullDesiredPath(self, n):
 		""" Creates a full list of desired points for the path
@@ -98,7 +102,7 @@ class Environment(object):
 						fullDP.append((t, desired_x, desired_y))
 						break
 
-		return fullDP
+		return np.array(fullDP)
 
 
 	def reset(self):
@@ -109,6 +113,14 @@ class Environment(object):
 		self.t = 0
 		self.m = 1
 		self.actual_path = []
+
+	def setState(self, x, y, vx, vy, t):
+		""" Sets the environment to a certain state
+		"""
+		self.x = x; self.y = y
+		self.Vx = 0; self.Vy = 0
+		self.t = t
+
 
 	def printState(self):
 		""" Prints the current state
@@ -128,7 +140,7 @@ class Environment(object):
 		errors = ((state["x"] - desired_point[1]) ** 2, (state["y"] - desired_point[2]) ** 2)
 		return errors[0] + errors[1]
 
-	def rewardFunction(self, state):
+	def rewardFunction2(self, state):
 		""" Calculates the reward from a single state
 
 		Params:
@@ -138,6 +150,38 @@ class Environment(object):
 		return float(10000) / error
 		#return float(100000000) / (((state["x"] - desired_point[1]) ** 2) + ((state["y"] - desired_point[2]) ** 2))
 
+	def rewardFunction(self, state, isPoint=False):
+		### Reward to next point
+		k1 = 1000.0
+		### Reward to final point
+		k2 = 200.0
+
+		if type(state) == dict:
+			point = (state["x"], state["y"])
+		else:
+			point = state
+			
+			
+		#closerPoint = self.desired_path[self.closerDesiredPoint(state)]
+
+		arg1 = k1 / self.closerDesiredPoint(state)
+		arg2 = k2 / np.linalg.norm(self.desired_path[-1][1:3] - point)
+
+		return arg1 + arg2
+
+	def closerDesiredPoint(self, state):
+		x = self.desired_path[:, 1]
+		y = self.desired_path[:, ]
+		if type(state) == dict:
+			point = (state["x"], state["y"])
+		else:
+			point = state
+		xy = self.desired_path[:, 1:3]
+		distances = np.linalg.norm(xy - point)
+		squared = (xy - point) ** 2
+		squared_sum = np.add(squared[:, 0], squared[:, 1])
+		#return np.argmin(squared_sum)
+		return np.min(distances)
 
 	def desiredPoint(self):
 		""" Returns an intermediate point from certain two points from original desired path
@@ -204,6 +248,8 @@ class Environment(object):
 		done = False
 		if self.tmax <= self.t + 1:
 			done = True
+		if self.x not in self.lx or self.y not in self.ly:
+			done = True
 		try:
 			print("Desired point {0}".format(self.desiredPoint()))
 		except:
@@ -238,7 +284,7 @@ class Environment(object):
 
 		### Displaying our submarine at (x, y)
 		window.blit(submarine, (self.x - submarine.get_width()/2, self.y - submarine.get_height()/2))	
-
+		pygame.image.save(window, "screenshot.jpeg")
 		### Game loop
 		final_loop()
 
