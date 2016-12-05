@@ -1,4 +1,4 @@
-#encoding=utf-8
+            #encoding=utf-8
 from graphical_setup import *
 import itertools	
 import numpy as np
@@ -9,10 +9,10 @@ class Environment(object):
 
 	### Environment Params
 	SIZE = (800, 600)
-	Vx_max = 1
-	Vx_min = -1
-	Vy_max = 1
-	Vy_min = -1
+	Vx_max = 100
+	Vx_min = -100
+	Vy_max = 100
+	Vy_min = -100
 
 	Fx_max = 1 
 	Fx_min = -1
@@ -45,7 +45,7 @@ class Environment(object):
 		self.ly = [y for y in range(Environment.SIZE[1])]
 
 		### Points (t, x, y)
-		self.desired_path = [(0, 0, 0),
+		desired_path = [(0, 0, 0),
 					     	 (5, 70, 30),
 							 (15, 100, 105),
 							 (30, 150, 205),
@@ -60,11 +60,51 @@ class Environment(object):
 							 (190, 610, 380),
 							 (200, 800, 200)]
 
+		desired_path2 = [(0, 0, 0),
+					     	 (5, 70, 30),
+							 (15, 100, 105),
+							 (30, 150, 205),
+							 (34, 200, 300),
+							 (50, 300, 360),
+							 (60, 350, 380),
+							 (100, 400, 410),
+							 (105, 460, 420),
+							 (120, 500, 460),
+							 (150, 630, 400),
+							 (170, 680, 300),
+							 (190, 710, 380),
+							 (200, 800, 200)]
+		
+ 		desired_path2 = [(0, 0, 0),
+			     		 (1, 70, 30),
+						 (2, 200, 300),
+						 (3, 460, 420),
+						 (4, 680, 300),
+						 (5, 800, 200)]
+
+ 		desired_path2 = [(0, 0, 0),
+			     		 (1, 400, 200),
+						 (2, 200, 400),
+						 (3, 100, 400),
+						 (4, 100, 100),
+						 (5, 800, 500)]
+		
+		self.desired_path = desired_path2
+
 		self.final_state = self.desired_path[-1]
 
 		self.actual_path = []
-		self.desired_path = self.createFullDesiredPath(self.tmax)
+		#self.desired_path = self.createFullDesiredPath(self.tmax)
+		
+		self.desired_path = np.array(self.desired_path)
+		#self.desired_path = self.createFullDesiredPath(5)
+		self.reescale_path(2)
+		self.path_track = np.zeros(800)
 
+
+
+	def reescale_path(self, ratio):
+		self.desired_path[:, 1:3] = self.desired_path[:, 1:3] / ratio
 
 	def createFullDesiredPath(self, n):
 		""" Creates a full list of desired points for the path
@@ -150,24 +190,77 @@ class Environment(object):
 		return float(10000) / error
 		#return float(100000000) / (((state["x"] - desired_point[1]) ** 2) + ((state["y"] - desired_point[2]) ** 2))
 
-	def rewardFunction(self, state, isPoint=False):
+
+	def rewardFunction(self, state, t, isPoint=False):
 		### Reward to next point
-		k1 = 1000.0
+		k1 = 150.0
 		### Reward to final point
-		k2 = 200.0
+		k2 = 150.0
+		k3 = 300.0
+		kf = 3000.0
+		
+
+		if type(state) == dict:
+			point = (state["x"], state["y"])
+			desired_point = self.desired_path[state["t"], 1:3]
+		else:
+			point = state
+			desired_point = self.desired_path[int(t), 1:3]
+
+		distance = np.linalg.norm(desired_point - point)
+
+		return 3000.0 / (distance + 1)
+
+	def rewardFunction4(self, state, isPoint=False):
+		### Reward to next point
+		k1 = 150.0
+		### Reward to final point
+		k2 = 150.0
+		k3 = 300.0
+		kf = 3000.0
 
 		if type(state) == dict:
 			point = (state["x"], state["y"])
 		else:
 			point = state
 			
+		pointIndex, distance = self.closerDesiredPoint(state)
+		arg1 = k1 / (distance + 1)
+		
+		pointIndex2, distance2 = self.closerDesiredPoint(self.desired_path[pointIndex + 1, 1:3])
+		arg2 = k2 / (distance2 + 1)
+
+		pointIndex3, distance3 = self.closerDesiredPoint(self.desired_path[pointIndex + 2, 1:3])
+		arg3 = k3 / (distance3 + 1)
+
+		#argf = kf / (np.linalg.norm(self.desired_path[-1][1:3] - point) + 1)
+
+		return arg1 + arg2 + arg3
+
+	def rewardFunction3(self, state, isPoint=False):
+		### Reward to next point
+		k1 = 1000.0
+
+		if type(state) == dict:
+			point = (state["x"], state["y"])
+		else:
+			point = state
+
+		nextPointIndex = np.argmin(self.path_track)
+		if nextPointIndex >= len(self.desired_path):
+				nextPointIndex = len(self.desired_path) - 1
+		distance = np.linalg.norm(self.desired_path[nextPointIndex, 1:3] - point)
+		#print("Essa eh a distancia para o proximo ponto: {}".format(distance))
+
+		if distance < 5.0:
+			self.path_track[nextPointIndex] = 1
+			nextPointIndex += 1
+			if nextPointIndex >= len(self.desired_path):
+				nextPointIndex = len(self.desired_path) - 1
+			distance = np.linalg.norm(self.desired_path[nextPointIndex, 1:3] - point)
+
+		return k1 / distance
 			
-		#closerPoint = self.desired_path[self.closerDesiredPoint(state)]
-
-		arg1 = k1 / self.closerDesiredPoint(state)
-		arg2 = k2 / np.linalg.norm(self.desired_path[-1][1:3] - point)
-
-		return arg1 + arg2
 
 	def closerDesiredPoint(self, state):
 		x = self.desired_path[:, 1]
@@ -178,10 +271,10 @@ class Environment(object):
 			point = state
 		xy = self.desired_path[:, 1:3]
 		distances = np.linalg.norm(xy - point)
-		squared = (xy - point) ** 2
-		squared_sum = np.add(squared[:, 0], squared[:, 1])
+		#squared = (xy - point) ** 2
+		#squared_sum = np.add(squared[:, 0], squared[:, 1])
 		#return np.argmin(squared_sum)
-		return np.min(distances)
+		return np.argmin(distances), np.min(distances)
 
 	def desiredPoint(self):
 		""" Returns an intermediate point from certain two points from original desired path
@@ -218,25 +311,37 @@ class Environment(object):
 					   "vy": None}
 		
 	    ### Incremento o tempo em uma unidade
-		self.t += 1
+		# if int(self.desired_path[self.t + 1][1]) in [i for i in range(int(self.x) - 10, int(self.x) + 10 )]:
+		# 	self.t += 1
+		margin = 10
+		if int(self.desired_path[self.t + 1][1]) in [i for i in range(int(self.x) - margin, int(self.x) + margin)] and int(self.desired_path[int(self.t  + 1)][2]) in [i for i in range(int(self.y) - margin, int(self.y) + margin)]:
+			self.t += 1
+
+
+
+		# if self.x == self.desired_path[self.t][1] and self.y == self.desired_path[self.t][2]:
+		# 	self.t += 1
 
 		### Ação, considero o delta t como sendo sempre 1
-		self.Fx = action[0]
-		self.Fy = action[1]
+		# self.Fx = action[0]
+		# self.Fy = action[1]
 
-		self.Ax =  float(self.Fx) / self.m
-		self.Ay =  float(self.Fy) / self.m 
+		# self.Ax =  float(self.Fx) / self.m
+		# self.Ay =  float(self.Fy) / self.m 
 
-		self.Vx += self.Ax
-		self.Vy += self.Ay
+		# self.Vx += self.Ax
+		# self.Vy += self.Ay
 
-		if int(self.Vx) not in self.Vx_range:
-			self.Vx -= self.Ax
-		if int(self.Vy) not in self.Vy_range:
-			self.Vy -= self.Ay
+		# if int(self.Vx) not in self.Vx_range:
+		# 	self.Vx -= self.Ax
+		# if int(self.Vy) not in self.Vy_range:
+		# 	self.Vy -= self.Ay
 
-		self.x += self.Vx
-		self.y += self.Vy
+		# self.x += self.Vx
+		# self.y += self.Vy
+
+		self.x += action[0]
+		self.y += action[1]
 
 		### Passing values to the observation dict
 		observation["x"] = self.x
@@ -258,7 +363,7 @@ class Environment(object):
 		print("Error: {0:.2f}".format(self.squaredError(observation)))
 		#print("Reward {0:.2f}".format(self.rewardFunction(observation)))
 
-		reward = self.rewardFunction(observation)
+		reward = self.rewardFunction(observation, self.t)
 		return observation, reward, done
 
 
@@ -267,23 +372,24 @@ class Environment(object):
 		"""
 
 		### Making the window blue  
+		ratio = 2
 		window.fill(BLUE)
 		### Drawing desired path
 		for i in range(len(self.desired_path) - 1):
 			pygame.draw.line(window, 
 							 (255, 0, 0), 
-							 self.desired_path[i][1:], 
-							 self.desired_path[i+1][1:])
+							 self.desired_path[i][1:]*ratio, 
+							 self.desired_path[i+1][1:]*ratio)
 
-		### Drawing actual path
+		## Drawing actual path
 		for i in range(len(self.actual_path) - 1):
 			pygame.draw.line(window, 
 							 (100, 255, 100), 
-							 self.actual_path[i][1:], 
-							 self.actual_path[i+1][1:])
+							 np.array(self.actual_path[i][1:])*ratio, 
+							 np.array(self.actual_path[i+1][1:])*ratio)
 
 		### Displaying our submarine at (x, y)
-		window.blit(submarine, (self.x - submarine.get_width()/2, self.y - submarine.get_height()/2))	
+		window.blit(submarine, (self.x*ratio - submarine.get_width()/2, self.y*ratio - submarine.get_height()/2))	
 		pygame.image.save(window, "screenshot.jpeg")
 		### Game loop
 		final_loop()
