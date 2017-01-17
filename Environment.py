@@ -34,13 +34,6 @@ class Environment(object):
 		self.action_space = [range(Environment.Fx_min, Environment.Fx_max + 1),
 							 range(Environment.Fy_min, Environment.Fy_max + 1)]
 
-		#self.action_space = list(itertools.product(*self.action_space))
-
-		### hehe
-		#self.space_space = [range(0, Environment.SIZE[0] + 1), range(0, Environment.SIZE[1] + 1)] 
-		#self.state_space = space_space + [self.Vx_range, self.Vy_range]
-		#self.state_space = list(itertools.product(*self.state_space))
-		#self.state_space = itertools.product(*space_space)
 		self.lx = [x for x in range(Environment.SIZE[0])]
 		self.ly = [y for y in range(Environment.SIZE[1])]
 
@@ -180,15 +173,6 @@ class Environment(object):
 		errors = ((state["x"] - desired_point[1]) ** 2, (state["y"] - desired_point[2]) ** 2)
 		return errors[0] + errors[1]
 
-	def rewardFunction2(self, state):
-		""" Calculates the reward from a single state
-
-		Params:
-			state: a dict with state params
-		"""
-		error = self.squaredError(state)
-		return float(10000) / error
-		#return float(100000000) / (((state["x"] - desired_point[1]) ** 2) + ((state["y"] - desired_point[2]) ** 2))
 
 
 	def rewardFunction(self, state, t, isPoint=False):
@@ -210,59 +194,16 @@ class Environment(object):
 		distance = np.linalg.norm(desired_point - point)
 
 		return 3000.0 / (distance + 1)
-
-	def rewardFunction4(self, state, isPoint=False):
-		### Reward to next point
-		k1 = 150.0
-		### Reward to final point
-		k2 = 150.0
-		k3 = 300.0
-		kf = 3000.0
-
-		if type(state) == dict:
-			point = (state["x"], state["y"])
-		else:
-			point = state
-			
-		pointIndex, distance = self.closerDesiredPoint(state)
-		arg1 = k1 / (distance + 1)
-		
-		pointIndex2, distance2 = self.closerDesiredPoint(self.desired_path[pointIndex + 1, 1:3])
-		arg2 = k2 / (distance2 + 1)
-
-		pointIndex3, distance3 = self.closerDesiredPoint(self.desired_path[pointIndex + 2, 1:3])
-		arg3 = k3 / (distance3 + 1)
-
-		#argf = kf / (np.linalg.norm(self.desired_path[-1][1:3] - point) + 1)
-
-		return arg1 + arg2 + arg3
-
-	def rewardFunction3(self, state, isPoint=False):
-		### Reward to next point
-		k1 = 1000.0
-
-		if type(state) == dict:
-			point = (state["x"], state["y"])
-		else:
-			point = state
-
-		nextPointIndex = np.argmin(self.path_track)
-		if nextPointIndex >= len(self.desired_path):
-				nextPointIndex = len(self.desired_path) - 1
-		distance = np.linalg.norm(self.desired_path[nextPointIndex, 1:3] - point)
-		#print("Essa eh a distancia para o proximo ponto: {}".format(distance))
-
-		if distance < 5.0:
-			self.path_track[nextPointIndex] = 1
-			nextPointIndex += 1
-			if nextPointIndex >= len(self.desired_path):
-				nextPointIndex = len(self.desired_path) - 1
-			distance = np.linalg.norm(self.desired_path[nextPointIndex, 1:3] - point)
-
-		return k1 / distance
 			
 
-	def closerDesiredPoint(self, state):
+	def closestDesiredPoint(self, state):
+		""" Returns the closest point and its distance to present point 
+
+		Params:
+			state: state dict or location tuple (x, y) 
+		Returns:
+			Closest point's index, minimum distance 
+		"""
 		x = self.desired_path[:, 1]
 		y = self.desired_path[:, ]
 		if type(state) == dict:
@@ -271,9 +212,7 @@ class Environment(object):
 			point = state
 		xy = self.desired_path[:, 1:3]
 		distances = np.linalg.norm(xy - point)
-		#squared = (xy - point) ** 2
-		#squared_sum = np.add(squared[:, 0], squared[:, 1])
-		#return np.argmin(squared_sum)
+
 		return np.argmin(distances), np.min(distances)
 
 	def desiredPoint(self):
@@ -310,19 +249,17 @@ class Environment(object):
 					   "vx": None,
 					   "vy": None}
 		
-	    ### Incremento o tempo em uma unidade
+	    ### Increase time by 1 
 		# if int(self.desired_path[self.t + 1][1]) in [i for i in range(int(self.x) - 10, int(self.x) + 10 )]:
 		# 	self.t += 1
 		margin = 10
 		if int(self.desired_path[self.t + 1][1]) in [i for i in range(int(self.x) - margin, int(self.x) + margin)] and int(self.desired_path[int(self.t  + 1)][2]) in [i for i in range(int(self.y) - margin, int(self.y) + margin)]:
 			self.t += 1
 
-
-
 		# if self.x == self.desired_path[self.t][1] and self.y == self.desired_path[self.t][2]:
 		# 	self.t += 1
 
-		### Ação, considero o delta t como sendo sempre 1
+		### Action, always considering delta t as 1 
 		# self.Fx = action[0]
 		# self.Fy = action[1]
 

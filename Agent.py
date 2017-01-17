@@ -24,5 +24,5 @@ class Agent(object):
 		self.policy = policy
 
 	def loatAgentPolicy(self):
-		self.policy = np.load("policies/policy5_final.npy")
+		self.policy = np.load("policies/policy10_final.npy")
 		#self.policy = self.policy 

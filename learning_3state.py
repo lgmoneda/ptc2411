@@ -37,7 +37,8 @@ def getValidStates(next_states, actions, lx, ly):
 
 def valueIteration(env):
     #action_space = np.array(np.meshgrid([-10,0,10], [-10,0,10])).T.reshape(-1,2)
-    action_space = np.array(np.meshgrid([-3, -2, -1, 0, 1, 2, 3], [-3, -2, -1, 0, 1, 2, 3])).T.reshape(-1,2)
+    action_space = np.array(np.meshgrid([-2, -1, 0, 1, 2], [-1, 0, 1])).T.reshape(-1,2)
+    print(action_space)
     lx = [x for x in range(X_MAX+1)]
     ly = [y for y in range(Y_MAX+1)]
     t = [instante for instante in range(T_MAX)]
@@ -91,11 +92,11 @@ def valueIteration(env):
         value_table[:, 3] = value_table[:, 4] 
         np.save("policy_partial", policy)
         print("Iteracao {0} finalizada em {1} minutos, max mod de {2}.".format(iteration, (time() - start)/60, max_mod))
-        np.save("policies/policy5_"+str(iteration), policy)
+        np.save("policies/policy10_"+str(iteration), policy)
 
-    np.save("policies/policy5_final", policy)
+    np.save("policies/policy10_final", policy)
     max_mods = np.array(max_mods)
-    np.save("policies/policy5_convergence", max_mods)
+    np.save("policies/policy10_convergence", max_mods)
     return policy
  
 
